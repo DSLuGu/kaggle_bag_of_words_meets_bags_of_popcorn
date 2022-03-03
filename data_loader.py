@@ -1,0 +1,47 @@
+import torchtext
+version = list(map(int, torchtext.__version__.split('.')))
+if version[0] <= 0 and version[1] < 9:
+    from torchtext import data
+else:
+    from torchtext.legacy import data
+
+
+class DataLoader:
+    '''Data loader class to load text file using torchtext library.'''
+    
+    def __init__(self, train_fn, batch_size=64, valid_ratio=.2, device=-1, 
+                 max_vocab=9999999, min_freq=1, use_eos=False, shuffle=True):
+        '''
+        :param train_fn: Train-set filename
+        :param batch_size: Batchify data for certain batch size
+        :param valid_ratio: Validation-set ratio
+        :param device: Device-id to load data (-1 for CPU)
+        :param max_vocab: Maximum vocabulary size
+        :param min_freq: Minimum frequency for loaded word
+        :param use_eos: If it is True, put <EOS> after every end of sentence
+        :param shuffle: If it is True, random shuffle the input data
+        '''
+        
+        super().__init__()
+        
+        self.label = data.Field(sequential=False, use_vocab=True, unk_token=None)
+        self.text = data.Field(
+            use_vocab=True, batch_first=True, 
+            include_lengths=False, eos_token='<EOS>' if use_eos else None
+        )
+        
+        train, valid = data.TabularDataset(
+            path=train_fn, format='tsv', 
+            fields={'sentiment': ('label', self.label), 'review': ('text', self.text)}
+        ).split(split_ratio=(1 - valid_ratio))
+        
+        self.train_loader, self.valid_loader = data.BucketIterator.splits(
+            (train, valid), batch_size=batch_size, 
+            device='cuda:%d' % device if device >= 0 else 'cpu', 
+            shuffle=shuffle, sort_key=lambda x: len(x.text), 
+            sort_within_batch=True
+        )
+        
+        self.label.build_vocab(train)
+        self.text.build_vocab(train, max_size=max_vocab, min_freq=min_freq)
+    
