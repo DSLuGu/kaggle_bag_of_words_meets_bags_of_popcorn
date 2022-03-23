@@ -1,4 +1,4 @@
-# kaggle_bag_of_words_meets_bags_of_popcorn
+# kaggle_bag_of_words_meets_bags_of_popcorn [\[Link\]](https://www.kaggle.com/c/word2vec-nlp-tutorial/overview)
 
 ## Preprocessing
 
