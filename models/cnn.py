@@ -5,7 +5,7 @@ import torch.nn as nn
 class CNNClassifier(nn.Module):
     
     def __init__(self, input_size, word_vec_size, n_classes, 
-                use_batch_norm=False, dropout_p=.5, window_size=[3, 4, 5], 
+                use_batch_norm=False, dropout_p=.5, window_sizes=[3, 4, 5], 
                 n_filters=[100, 100, 100]):
         
         self.input_size = input_size
@@ -13,15 +13,14 @@ class CNNClassifier(nn.Module):
         self.n_classes = n_classes
         self.use_batch_norm = use_batch_norm
         self.dropout_p = dropout_p
-        self.window_size = window_size
+        self.window_sizes = window_sizes
         self.n_filters = n_filters
         
         super().__init__()
         
         self.emb = nn.Embedding(input_size, word_vec_size)
-        
         self.feature_extractors = nn.ModuleList()
-        for window_size, n_filter in zip(window_size, n_filters):
+        for window_size, n_filter in zip(window_sizes, n_filters):
             self.feature_extractors.append(nn.Sequential(
                 nn.Conv2d(
                     in_channels=1, 
@@ -31,7 +30,6 @@ class CNNClassifier(nn.Module):
                 nn.ReLU(), 
                 nn.BatchNorm2d(n_filter) if use_batch_norm else nn.Dropout(dropout_p), 
             ))
-        
         self.generator = nn.Linear(sum(n_filters), n_classes)
         self.activation = nn.LogSoftmax(dim=-1)
     

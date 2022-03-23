@@ -55,7 +55,7 @@ def review_to_sentences(review, tokenizer, remove_stopwords=False):
         # If a sentence is empty, skip it
         if len(raw_sentence) > 0:
             # Otherwise, call review_to_words to get a list of words
-            sentences.append(review_to_words(raw_sentence, remove_stopwords))
+            sentences += [review_to_words(raw_sentence, remove_stopwords).split()]
     
     # Return the list of sentences (each sentence is a list of words, 
     # so this returns a list of lists)

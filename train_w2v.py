@@ -7,8 +7,10 @@ import logging
 
 import pandas as pd
 
+from tqdm import tqdm
+
 import nltk.data
-from gensim.models import word2vec
+from gensim.models import word2vec, KeyedVectors
 
 from preprocess import review_to_words, review_to_sentences
 
@@ -21,7 +23,7 @@ def define_argparser():
     
     p = argparse.ArgumentParser()
     
-    p.add_argument('--model_nm', default='./models/w2v.features-300.min_words-40.context-10.pkl')
+    p.add_argument('--model_nm', default='./models/word2vec.model')
     
     p.add_argument('--train_fn', type=str, default='unlabeledTrainData.tsv')
     
@@ -47,32 +49,28 @@ def main(config):
     # unlabeledTrainData['prep_review'] = unlabeledTrainData['review'].apply(
     #                                     review_to_sentences, args=(True, ))
     sentences = []
-    for i, row in unlabeledTrainData.iterrows():
+    for i, row in tqdm(unlabeledTrainData.iterrows()):
         sentences += review_to_sentences(
             row['review'], tokenizer, remove_stopwords=True
         )
+        # if i == 2: break
     
-    num_features = 300  # Word vector dimensionality
-    min_word_count = 40 # Minimum word count
-    num_workers = 4     # Number of threads to run in parallel
-    context = 10        # Context window size
-    downsampling = 1e-3 # Downsample setting for frequent words
-    
-    model = word2vec.Word2Vec(
-        sentences, workers=num_workers, vector_size=num_features, 
-        min_count=min_word_count, window=context, sample=downsampling, 
-    )
+    model = word2vec.Word2Vec(sentences=sentences, min_count=1, )
     # If you don't plan to train the model any further, 
     # calling init_sims will make the model much more memory-efficient.
-    model.init_sims(replace=True)
+    # model.init_sims(replace=True)
     
     # It can be helpful to create a meaningful model name 
     # and save the model for later use.
     # You can load it later using Word2Vec.load()
     model.save(config.model_nm)
+    # model.wv.save_word2vec_format('./models/eng_w2v')
+    # loaded_model = KeyedVectors.load_word2vec_format('./models/eng_w2v')
     
-    print(model.wv.most_similar("man"))
-    print(model.wv.most_similar("queen"))
+    print(model.corpus_count)
+    print(model.corpus_total_words)
+    
+    # print(model.wv.most_similar("watch"))
     
     return None
 
